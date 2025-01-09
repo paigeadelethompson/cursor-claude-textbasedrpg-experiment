@@ -19,7 +19,7 @@ jobs:
         run: | 
           git clone https://github.com/paigeadelethompson/cursor-claude-textbasedrpg-experiment.wiki.git /tmp/Docs
           git config user.name "GitHub Actions"
-          git config user.email ""
+          git config user.email "paige@paige.bio"
           cd Docs/
           cp -rvp . /tmp/Docs
           cd /tmp/Docs
