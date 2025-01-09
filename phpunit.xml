@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true">
+    <testsuites>
+        <testsuite name="auth">
+            <directory>tests/Auth</directory>
+        </testsuite>
+        <testsuite name="travel">
+            <directory>tests/Travel</directory>
+        </testsuite>
+        <testsuite name="graphql">
+            <directory>tests/GraphQL</directory>
+        </testsuite>
+        <testsuite name="market">
+            <directory>tests/Market</directory>
+        </testsuite>
+        <testsuite name="combat">
+            <directory>tests/Combat</directory>
+        </testsuite>
+        <testsuite name="bank">
+            <directory>tests/Bank</directory>
+        </testsuite>
+    </testsuites>
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+    </coverage>
+</phpunit> 

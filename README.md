@@ -155,6 +155,18 @@ npm run dev
 
 ## Development
 
+### Testing
+```bash
+# Run all tests
+./vendor/bin/phpunit
+
+# Run specific test suite
+./vendor/bin/phpunit --testsuite=market
+
+# Run with coverage report
+XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-html coverage
+```
+
 ### Starting WebSocket Servers
 ```bash
 # Start combat socket
@@ -162,16 +174,6 @@ php bin/socket.php combat
 
 # Start market socket
 php bin/socket.php market
-```
-
-### Monitoring
-```bash
-# Check WebSocket health
-curl http://localhost/health.php?type=combat
-curl http://localhost/health.php?type=market
-
-# Get Prometheus metrics
-curl http://localhost/health.php?type=combat&format=prometheus
 ```
 
 ## License
