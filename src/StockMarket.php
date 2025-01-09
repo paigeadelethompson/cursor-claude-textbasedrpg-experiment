@@ -2,17 +2,45 @@
 
 namespace Game;
 
+/**
+ * Class StockMarket
+ * Handles stock trading, price updates, and market operations
+ * 
+ * @package Game
+ */
 class StockMarket {
+    /** @var \PDO Database connection instance */
     private $db;
+
+    /** @var Player The player instance */
     private $player;
 
+    /** @var float Maximum percentage a stock can move in one update */
+    private const MAX_PRICE_MOVEMENT = 0.15; // 15%
+
+    /** @var int Minimum minutes between price updates */
+    private const PRICE_UPDATE_INTERVAL = 5;
+
+    /**
+     * StockMarket constructor
+     *
+     * @param Player $player The player instance
+     */
     public function __construct(Player $player) {
         $this->player = $player;
         $this->db = Database::getInstance()->getConnection();
     }
 
-    public function buyStock(string $symbol, int $quantity): array {
-        $stock = $this->getStockInfo($symbol);
+    /**
+     * Buy shares of a stock
+     *
+     * @param string $stockId Stock identifier
+     * @param int $quantity Number of shares to buy
+     * @return array Transaction result
+     * @throws \Exception If validation fails or insufficient funds
+     */
+    public function buyStock(string $stockId, int $quantity): array {
+        $stock = $this->getStockInfo($stockId);
         $totalCost = $stock['current_price'] * $quantity;
 
         if ($this->player->getMoney() < $totalCost) {
@@ -42,9 +70,17 @@ class StockMarket {
         ];
     }
 
-    public function sellStock(string $symbol, int $quantity): array {
-        $stock = $this->getStockInfo($symbol);
-        $playerStock = $this->getPlayerStockHolding($symbol);
+    /**
+     * Sell shares of a stock
+     *
+     * @param string $stockId Stock identifier
+     * @param int $quantity Number of shares to sell
+     * @return array Transaction result
+     * @throws \Exception If validation fails or insufficient shares
+     */
+    public function sellStock(string $stockId, int $quantity): array {
+        $stock = $this->getStockInfo($stockId);
+        $playerStock = $this->getPlayerStockHolding($stockId);
 
         if ($playerStock['quantity'] < $quantity) {
             throw new \Exception("Insufficient shares");
@@ -78,31 +114,12 @@ class StockMarket {
         ];
     }
 
-    private function getStockInfo(string $symbol): array {
-        $stmt = $this->db->prepare("
-            SELECT * FROM stocks WHERE symbol = ?
-        ");
-        $stmt->execute([$symbol]);
-        $stock = $stmt->fetch();
-
-        if (!$stock) {
-            throw new \Exception("Stock not found");
-        }
-
-        return $stock;
-    }
-
-    private function getPlayerStockHolding(string $symbol): array {
-        $stmt = $this->db->prepare("
-            SELECT ps.* FROM player_stocks ps
-            JOIN stocks s ON s.id = ps.stock_id
-            WHERE ps.player_id = ? AND s.symbol = ?
-        ");
-        $stmt->execute([$this->player->getId(), $symbol]);
-        return $stmt->fetch();
-    }
-
-    public function updateStockPrices(): void {
+    /**
+     * Get current stock prices
+     *
+     * @return array Array of current stock information
+     */
+    public function getStocks(): array {
         // Simulate market movements
         $stmt = $this->db->prepare("
             SELECT * FROM stocks
@@ -129,5 +146,91 @@ class StockMarket {
             ");
             $stmt->execute([$stock['id'], $newPrice]);
         }
+    }
+
+    /**
+     * Get player's stock portfolio
+     *
+     * @return array Array of owned stocks and their details
+     */
+    public function getPortfolio(): array {
+        $stmt = $this->db->prepare("
+            SELECT ps.* FROM player_stocks ps
+            JOIN stocks s ON s.id = ps.stock_id
+            WHERE ps.player_id = ?
+        ");
+        $stmt->execute([$this->player->getId()]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Update stock prices based on market simulation
+     *
+     * @return void
+     */
+    private function updatePrices(): void {
+        // Simulate market movements
+        $stmt = $this->db->prepare("
+            SELECT * FROM stocks
+        ");
+        $stmt->execute();
+        $stocks = $stmt->fetchAll();
+
+        foreach ($stocks as $stock) {
+            $change = rand(-500, 500) / 100; // -5.00 to +5.00
+            $newPrice = max(0.01, $stock['current_price'] + $change);
+
+            // Update current price
+            $stmt = $this->db->prepare("
+                UPDATE stocks 
+                SET current_price = ?, last_updated = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ");
+            $stmt->execute([$newPrice, $stock['id']]);
+
+            // Record price history
+            $stmt = $this->db->prepare("
+                INSERT INTO stock_price_history 
+                (stock_id, price) VALUES (?, ?)
+            ");
+            $stmt->execute([$stock['id'], $newPrice]);
+        }
+    }
+
+    /**
+     * Calculate new stock price using random walk algorithm
+     *
+     * @param float $currentPrice Current stock price
+     * @return float New calculated price
+     */
+    private function calculateNewPrice(float $currentPrice): float {
+        $change = rand(-500, 500) / 100; // -5.00 to +5.00
+        $newPrice = max(0.01, $currentPrice + $change);
+
+        return $newPrice;
+    }
+
+    private function getStockInfo(string $symbol): array {
+        $stmt = $this->db->prepare("
+            SELECT * FROM stocks WHERE symbol = ?
+        ");
+        $stmt->execute([$symbol]);
+        $stock = $stmt->fetch();
+
+        if (!$stock) {
+            throw new \Exception("Stock not found");
+        }
+
+        return $stock;
+    }
+
+    private function getPlayerStockHolding(string $symbol): array {
+        $stmt = $this->db->prepare("
+            SELECT ps.* FROM player_stocks ps
+            JOIN stocks s ON s.id = ps.stock_id
+            WHERE ps.player_id = ? AND s.symbol = ?
+        ");
+        $stmt->execute([$this->player->getId(), $symbol]);
+        return $stmt->fetch();
     }
 } 

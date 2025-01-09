@@ -2,17 +2,40 @@
 
 namespace Game;
 
+/**
+ * Class Travel
+ * Handles player travel between cities and travel-related restrictions
+ * 
+ * @package Game
+ */
 class Travel {
+    /** @var \PDO Database connection instance */
     private $db;
-    private $player;
-    private const TRAVEL_SPEED = 800; // km/h average flight speed
-    private const MAX_TRAVEL_TIME = 4; // Maximum travel time in hours
 
+    /** @var Player The player instance */
+    private $player;
+
+    /** @var float Average flight speed in kilometers per hour */
+    private const TRAVEL_SPEED = 800;
+
+    /** @var int Maximum travel time in hours */
+    private const MAX_TRAVEL_TIME = 4;
+
+    /**
+     * Travel constructor
+     *
+     * @param Player $player The player instance
+     */
     public function __construct(Player $player) {
         $this->player = $player;
         $this->db = Database::getInstance()->getConnection();
     }
 
+    /**
+     * Get the player's current city
+     *
+     * @return array City information
+     */
     public function getCurrentCity(): array {
         $stmt = $this->db->prepare("
             SELECT c.* FROM cities c
@@ -27,6 +50,13 @@ class Travel {
         return $currentCity ?: $this->getMainCity();
     }
 
+    /**
+     * Initiate travel to a new city
+     *
+     * @param string $cityId The destination city ID
+     * @return array Travel result containing success status, destination, cost, and timing information
+     * @throws \Exception If travel conditions are not met
+     */
     public function travelTo(string $cityId): array {
         $currentCity = $this->getCurrentCity();
         $destinationCity = $this->getCityById($cityId);
@@ -84,6 +114,12 @@ class Travel {
         ];
     }
 
+    /**
+     * Return to the main city (Seattle)
+     *
+     * @return array Travel result
+     * @throws \Exception If already in Seattle
+     */
     public function returnToMainCity(): array {
         $currentCity = $this->getCurrentCity();
         $mainCity = $this->getMainCity();
@@ -95,6 +131,11 @@ class Travel {
         return $this->travelTo($mainCity['id']);
     }
 
+    /**
+     * Check if player is currently traveling
+     *
+     * @return bool True if player is traveling
+     */
     private function isCurrentlyTraveling(): bool {
         $stmt = $this->db->prepare("
             SELECT 1 FROM travel_history
@@ -105,6 +146,15 @@ class Travel {
         return (bool) $stmt->fetch();
     }
 
+    /**
+     * Calculate distance between two points using Haversine formula
+     *
+     * @param float $lat1 Starting latitude
+     * @param float $lon1 Starting longitude
+     * @param float $lat2 Destination latitude
+     * @param float $lon2 Destination longitude
+     * @return float Distance in kilometers
+     */
     private function calculateDistance(
         float $lat1, 
         float $lon1, 
@@ -120,18 +170,34 @@ class Travel {
         return $miles * 1.609344; // Convert to kilometers
     }
 
+    /**
+     * Get city information by ID
+     *
+     * @param string $cityId The city ID
+     * @return array|null City information or null if not found
+     */
     private function getCityById(string $cityId): ?array {
         $stmt = $this->db->prepare("SELECT * FROM cities WHERE id = ?");
         $stmt->execute([$cityId]);
         return $stmt->fetch();
     }
 
+    /**
+     * Get main city (Seattle) information
+     *
+     * @return array Main city information
+     */
     private function getMainCity(): array {
         $stmt = $this->db->prepare("SELECT * FROM cities WHERE is_main_city = TRUE");
         $stmt->execute();
         return $stmt->fetch();
     }
 
+    /**
+     * Get features accessible during travel
+     *
+     * @return array Associative array of feature accessibility
+     */
     public function getAccessibleFeatures(): array {
         if (!$this->isCurrentlyTraveling()) {
             return [
@@ -159,6 +225,12 @@ class Travel {
         ];
     }
 
+    /**
+     * Calculate travel cost based on distance
+     *
+     * @param float $distance Distance in kilometers
+     * @return float Travel cost in game currency
+     */
     private function calculateTravelCost(float $distance): float {
         // Base cost plus distance-based cost
         return 100 + ($distance * 0.5);

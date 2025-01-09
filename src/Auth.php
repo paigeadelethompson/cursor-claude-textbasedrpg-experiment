@@ -2,14 +2,34 @@
 
 namespace Game;
 
+/**
+ * Class Auth
+ * Handles player authentication, registration, and session management
+ * 
+ * @package Game
+ */
 class Auth {
+    /** @var \PDO Database connection instance */
     private $db;
+
+    /** @var int Number of days before a session token expires */
     private const TOKEN_EXPIRY_DAYS = 30;
 
+    /**
+     * Auth constructor
+     */
     public function __construct() {
         $this->db = Database::getInstance()->getConnection();
     }
 
+    /**
+     * Register a new player
+     *
+     * @param string $username The desired username (3-20 characters)
+     * @param string $password The password (minimum 8 characters)
+     * @return array Array containing token and expiry information
+     * @throws \Exception If username is taken or validation fails
+     */
     public function register(string $username, string $password): array {
         if (strlen($username) < 3 || strlen($username) > 20) {
             throw new \Exception("Username must be between 3 and 20 characters");
@@ -55,6 +75,14 @@ class Auth {
         return $this->createSession($playerId);
     }
 
+    /**
+     * Authenticate a player and create a new session
+     *
+     * @param string $username The player's username
+     * @param string $password The player's password
+     * @return array Array containing token and expiry information
+     * @throws \Exception If credentials are invalid
+     */
     public function login(string $username, string $password): array {
         $stmt = $this->db->prepare("
             SELECT id, password_hash 
@@ -71,6 +99,12 @@ class Auth {
         return $this->createSession($player['id']);
     }
 
+    /**
+     * Validate an existing session token
+     *
+     * @param string $token The session token to validate
+     * @return array|null Player session data if valid, null if invalid
+     */
     public function validateSession(string $token): ?array {
         $stmt = $this->db->prepare("
             SELECT 
@@ -104,11 +138,22 @@ class Auth {
         ];
     }
 
+    /**
+     * End a player's session
+     *
+     * @param string $token The session token to invalidate
+     */
     public function logout(string $token): void {
         $stmt = $this->db->prepare("DELETE FROM sessions WHERE token = ?");
         $stmt->execute([$token]);
     }
 
+    /**
+     * Create a new session for a player
+     *
+     * @param string $playerId The ID of the player
+     * @return array Array containing token and expiry information
+     */
     private function createSession(string $playerId): array {
         $token = bin2hex(random_bytes(32));
         $expiresAt = date('Y-m-d H:i:s', strtotime('+' . self::TOKEN_EXPIRY_DAYS . ' days'));
