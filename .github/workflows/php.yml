@@ -13,13 +13,13 @@ jobs:
 
       - name: Run phpdoc
         run: |
-          docker run --rm -v $(pwd):/data phpdoc/phpdoc:3 -d ./Src -t ./Docs
+          docker run --rm -v $(pwd):/data phpdoc/phpdoc:3 -d . -t ./Docs
 
       - name: git commit
         run: | 
           git clone https://github.com/paigeadelethompson/cursor-claude-textbasedrpg-experiment.wiki.git /tmp/Docs
-          git config user.name "GitHub Actions"
-          git config user.email "paige@paige.bio"
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "paige@paige.bio"
           cd Docs/
           cp -rvp . /tmp/Docs
           cd /tmp/Docs
