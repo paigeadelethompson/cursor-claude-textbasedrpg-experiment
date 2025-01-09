@@ -15,7 +15,8 @@ class BankResolverTest extends TestCase {
         $this->resolver = new BankResolver($this->bank);
     }
 
-    public function testCreateCD(): void {
+    /** @test */
+    public function create_cd_mutation(): void {
         $args = [
             'amount' => 1000.00,
             'termMonths' => 3
@@ -39,7 +40,8 @@ class BankResolverTest extends TestCase {
         $this->assertEquals($expectedResult, $result);
     }
 
-    public function testGetCDs(): void {
+    /** @test */
+    public function get_cds_query(): void {
         $expectedCDs = [
             [
                 'id' => 'cd-1',
@@ -65,7 +67,8 @@ class BankResolverTest extends TestCase {
         $this->assertEquals($expectedCDs, $result);
     }
 
-    public function testWithdrawCD(): void {
+    /** @test */
+    public function withdraw_cd_mutation(): void {
         $args = ['cdId' => 'cd-1'];
 
         $expectedResult = [
