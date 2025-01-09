@@ -8,7 +8,6 @@
         "ext-pdo": "*",
         "webonyx/graphql-php": "^15.0",
         "cboden/ratchet": "^0.4",
-        "rdkafka/rdkafka": "^6.0",
         "vlucas/phpdotenv": "^5.5",
         "ramsey/uuid": "^4.7",
         "monolog/monolog": "^2.9",
