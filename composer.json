@@ -30,8 +30,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/",
-            "Game\\Tests\\": "tests/"
+            "Tests\\": "tests/"
         }
     },
     "scripts": {
