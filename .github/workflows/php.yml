@@ -17,7 +17,7 @@ jobs:
 
       - name: git commit
         run: | 
-          git remote add origin https://github.com/paigeadelethompson/cursor-claude-textbasedrpg-experiment.wiki.git /tmp/Docs
+          git clone https://github.com/paigeadelethompson/cursor-claude-textbasedrpg-experiment.wiki.git /tmp/Docs
           git config user.name "GitHub Actions"
           git config user.email ""
           cd Docs/
