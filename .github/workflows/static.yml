@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - uses: php-actions/composer@v6
+      - uses: php-actions/phpunit@v3
       - name: Create
         run: |
             docker run -v /tmp/markdown:/md --rm -v $(pwd):/data phpdoc/phpdoc:3 -d . -t ./Docs
