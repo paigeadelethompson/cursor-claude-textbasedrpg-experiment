@@ -1,0 +1,55 @@
+{
+    "name": "yourusername/rpg-game",
+    "description": "A browser-based multiplayer RPG game",
+    "type": "project",
+    "require": {
+        "php": "^7.4|^8.0",
+        "ext-json": "*",
+        "ext-pdo": "*",
+        "webonyx/graphql-php": "^15.0",
+        "cboden/ratchet": "^0.4",
+        "rdkafka/rdkafka": "^6.0",
+        "vlucas/phpdotenv": "^5.5",
+        "ramsey/uuid": "^4.7",
+        "monolog/monolog": "^2.9",
+        "guzzlehttp/guzzle": "^7.0",
+        "symfony/console": "^5.4",
+        "doctrine/collections": "^2.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6",
+        "phpstan/phpstan": "^1.10",
+        "squizlabs/php_codesniffer": "^3.7",
+        "mockery/mockery": "^1.6",
+        "fakerphp/faker": "^1.23",
+        "symfony/var-dumper": "^5.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Game\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "XDEBUG_MODE=coverage phpunit --coverage-html coverage",
+        "phpstan": "phpstan analyse src tests",
+        "cs-check": "phpcs",
+        "cs-fix": "phpcbf",
+        "post-create-project-cmd": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "socket:combat": "php bin/socket.php combat",
+        "socket:market": "php bin/socket.php market"
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+} 

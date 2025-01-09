@@ -48,6 +48,9 @@ cd rpg-game
 2. Install PHP dependencies:
 ```bash
 composer install
+
+# Generate autoload files
+composer dump-autoload -o
 ```
 
 3. Install frontend dependencies:
@@ -82,8 +85,10 @@ cockroach sql --insecure --database=rpg_game < database/schema.sql
 7. Configure environment variables:
 ```bash
 cp .env.example .env
+
+# Edit .env with your configuration
+vim .env
 ```
-Edit .env file with your database credentials and other settings.
 
 8. Start WebSocket servers:
 ```bash
