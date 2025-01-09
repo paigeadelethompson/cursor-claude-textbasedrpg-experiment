@@ -2,7 +2,8 @@
 
 namespace Tests\Combat;
 
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
+use Game\Types\PropertyHookType;
 use Game\Combat;
 use Game\Player;
 

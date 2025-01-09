@@ -2,7 +2,8 @@
 
 namespace Tests\Bank;
 
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
+use Game\Types\PropertyHookType;
 use Game\Bank\CD;
 use Game\Player;
 

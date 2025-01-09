@@ -2,7 +2,8 @@
 
 namespace Tests\GraphQL\Resolvers;
 
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
+use Game\Types\PropertyHookType;
 use Game\GraphQL\Resolvers\BankResolver;
 use Game\Bank;
 
