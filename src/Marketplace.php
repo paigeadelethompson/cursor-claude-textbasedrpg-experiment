@@ -21,6 +21,9 @@ class Marketplace {
     /** @var int Maximum number of active listings per player */
     private const MAX_LISTINGS_PER_PLAYER = 10;
 
+    /** @var array Active changefeeds */
+    private static $changefeeds = [];
+
     /**
      * Marketplace constructor
      *
@@ -245,5 +248,19 @@ class Marketplace {
             ");
             $stmt->execute([$this->player->getId(), $itemId, $quantity]);
         }
+    }
+
+    /**
+     * Initialize marketplace changefeed
+     * 
+     * @return void
+     */
+    public function initializeChangefeed(): void {
+        $stmt = $this->db->prepare("
+            CREATE CHANGEFEED FOR TABLE marketplace_listings 
+            INTO 'kafka://kafka:9092'
+            WITH updated, resolved='10s'
+        ");
+        $stmt->execute();
     }
 } 

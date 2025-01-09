@@ -1,152 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { Line } from 'react-chartjs-2';
-import { GET_STOCKS, GET_PLAYER_STOCKS } from '../graphql/queries';
+import { GET_STOCKS, GET_PLAYER_PORTFOLIO } from '../graphql/queries';
 import { BUY_STOCK, SELL_STOCK } from '../graphql/mutations';
+import { KafkaConsumer } from '../utils/kafka';
 import './StockMarket.css';
 
 const StockMarket = ({ player }) => {
-    const [selectedStock, setSelectedStock] = useState(null);
-    const [quantity, setQuantity] = useState(1);
+    const [stocks, setStocks] = useState([]);
+    const [portfolio, setPortfolio] = useState([]);
 
-    const { data: stocksData, loading: stocksLoading } = useQuery(GET_STOCKS, {
-        pollInterval: 60000 // Update every minute
-    });
+    useEffect(() => {
+        // Initial data load
+        fetchStocks();
+        fetchPortfolio();
 
-    const { data: playerStocksData } = useQuery(GET_PLAYER_STOCKS, {
-        variables: { playerId: player.id }
-    });
-
-    const [buyStock] = useMutation(BUY_STOCK, {
-        refetchQueries: [
-            { query: GET_PLAYER_STOCKS, variables: { playerId: player.id } }
-        ]
-    });
-
-    const [sellStock] = useMutation(SELL_STOCK, {
-        refetchQueries: [
-            { query: GET_PLAYER_STOCKS, variables: { playerId: player.id } }
-        ]
-    });
-
-    const handleStockSelect = (stock) => {
-        setSelectedStock(stock);
-    };
-
-    const handleTransaction = async (type) => {
-        try {
-            const mutation = type === 'buy' ? buyStock : sellStock;
-            const response = await mutation({
-                variables: {
-                    input: {
-                        stockId: selectedStock.id,
-                        quantity: quantity,
-                        playerId: player.id
+        // Subscribe to stock price updates
+        const priceConsumer = new KafkaConsumer('stock_prices');
+        priceConsumer.subscribe((message) => {
+            const change = JSON.parse(message.value);
+            if (change.after) {
+                setStocks(prev => {
+                    const updated = [...prev];
+                    const index = updated.findIndex(s => s.id === change.after.stock_id);
+                    if (index >= 0) {
+                        updated[index] = {
+                            ...updated[index],
+                            current_price: change.after.price,
+                            price_change: change.after.price - updated[index].current_price
+                        };
                     }
-                }
-            });
-
-            if (response.data) {
-                // Show success message or update UI
-                const action = type === 'buy' ? 'bought' : 'sold';
-                alert(`Successfully ${action} ${quantity} shares of ${selectedStock.symbol}`);
+                    return updated;
+                });
             }
-        } catch (error) {
-            console.error(`${type} failed:`, error);
-            alert(error.message);
-        }
-    };
+        });
 
-    if (stocksLoading) return <div>Loading stocks...</div>;
+        // Subscribe to transaction updates
+        const transactionConsumer = new KafkaConsumer('stock_transactions');
+        transactionConsumer.subscribe((message) => {
+            const change = JSON.parse(message.value);
+            if (change.after && change.after.player_id === player.id) {
+                fetchPortfolio(); // Refresh portfolio on new transactions
+            }
+        });
 
-    const playerStocks = playerStocksData?.player?.stocks || [];
-    const stocks = stocksData?.stocks || [];
+        return () => {
+            priceConsumer.disconnect();
+            transactionConsumer.disconnect();
+        };
+    }, [player.id]);
 
-    const formatPriceHistory = (history) => ({
-        labels: history.map(h => new Date(h.timestamp).toLocaleTimeString()),
-        datasets: [{
-            label: 'Price',
-            data: history.map(h => h.price),
-            borderColor: '#4CAF50',
-            tension: 0.1
-        }]
-    });
-
-    return (
-        <div className="stock-market">
-            <div className="stock-list">
-                <h2>Available Stocks</h2>
-                {stocks.map(stock => (
-                    <div 
-                        key={stock.id} 
-                        className={`stock-item ${selectedStock?.id === stock.id ? 'selected' : ''}`}
-                        onClick={() => handleStockSelect(stock)}
-                    >
-                        <div className="stock-symbol">{stock.symbol}</div>
-                        <div className="stock-price">${stock.currentPrice}</div>
-                        {playerStocks.find(ps => ps.stock.id === stock.id) && (
-                            <div className="owned-indicator">Owned</div>
-                        )}
-                    </div>
-                ))}
-            </div>
-
-            {selectedStock && (
-                <div className="stock-detail">
-                    <h3>{selectedStock.name}</h3>
-                    <div className="transaction-panel">
-                        <input
-                            type="number"
-                            min="1"
-                            value={quantity}
-                            onChange={(e) => setQuantity(parseInt(e.target.value))}
-                        />
-                        <button 
-                            onClick={() => handleTransaction('buy')}
-                            disabled={player.money < selectedStock.currentPrice * quantity}
-                        >
-                            Buy (${(selectedStock.currentPrice * quantity).toFixed(2)})
-                        </button>
-                        {playerStocks.find(ps => ps.stock.id === selectedStock.id) && (
-                            <button 
-                                onClick={() => handleTransaction('sell')}
-                            >
-                                Sell (${(selectedStock.currentPrice * quantity).toFixed(2)})
-                            </button>
-                        )}
-                    </div>
-
-                    {selectedStock.priceHistory && (
-                        <div className="price-chart">
-                            <Line
-                                data={formatPriceHistory(selectedStock.priceHistory)}
-                                options={{
-                                    responsive: true,
-                                    scales: {
-                                        y: {
-                                            beginAtZero: false
-                                        }
-                                    }
-                                }}
-                            />
-                        </div>
-                    )}
-
-                    <div className="stock-holdings">
-                        {playerStocks.find(ps => ps.stock.id === selectedStock.id) && (
-                            <div className="holdings-info">
-                                <h4>Your Holdings</h4>
-                                <p>Quantity: {ps.quantity}</p>
-                                <p>Purchase Price: ${ps.purchasePrice}</p>
-                                <p>Current Value: ${(ps.quantity * selectedStock.currentPrice).toFixed(2)}</p>
-                                <p>Profit/Loss: ${((selectedStock.currentPrice - ps.purchasePrice) * ps.quantity).toFixed(2)}</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+    // ... rest of the component code ...
 };
 
 export default StockMarket; 

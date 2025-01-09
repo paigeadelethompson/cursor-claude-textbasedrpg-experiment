@@ -233,4 +233,55 @@ class StockMarket {
         $stmt->execute([$this->player->getId(), $symbol]);
         return $stmt->fetch();
     }
+
+    /**
+     * Initialize stock market changefeed
+     * 
+     * @return void
+     */
+    public function initializeChangefeed(): void {
+        // Create changefeed for stock prices
+        $stmt = $this->db->prepare("
+            CREATE CHANGEFEED FOR TABLE stock_prices 
+            INTO 'kafka://kafka:9092'
+            WITH updated, resolved='5s'
+        ");
+        $stmt->execute();
+
+        // Create changefeed for player transactions
+        $stmt = $this->db->prepare("
+            CREATE CHANGEFEED FOR TABLE stock_transactions 
+            INTO 'kafka://kafka:9092'
+            WITH updated, resolved='10s'
+        ");
+        $stmt->execute();
+    }
+
+    /**
+     * Update stock prices with market simulation
+     *
+     * @return void
+     */
+    public function updatePrices(): void {
+        $this->db->beginTransaction();
+
+        try {
+            $stocks = $this->getAllStocks();
+            foreach ($stocks as $stock) {
+                $priceChange = $this->calculatePriceChange($stock['current_price']);
+                $newPrice = $stock['current_price'] + $priceChange;
+
+                $stmt = $this->db->prepare("
+                    INSERT INTO stock_prices (stock_id, price, timestamp)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                ");
+                $stmt->execute([$stock['id'], $newPrice]);
+            }
+
+            $this->db->commit();
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
 } 

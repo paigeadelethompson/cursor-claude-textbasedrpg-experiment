@@ -275,3 +275,119 @@ CREATE TABLE bounties (
 -- Index for quick bounty lookups
 CREATE INDEX idx_bounties_target ON bounties(target_id) WHERE status = 'active';
 CREATE INDEX idx_bounties_issuer ON bounties(issuer_id); 
+
+-- Stock market tables
+CREATE TABLE stock_prices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    stock_id UUID NOT NULL REFERENCES stocks(id),
+    price DECIMAL(10,2) NOT NULL,
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (stock_id, timestamp)
+);
+
+CREATE TABLE stock_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    player_id UUID NOT NULL REFERENCES players(id),
+    stock_id UUID NOT NULL REFERENCES stocks(id),
+    quantity INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('buy', 'sell')),
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (player_id, timestamp)
+);
+
+-- Bank and CD tables
+CREATE TABLE cd_rates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    term_days INT NOT NULL,
+    rate DECIMAL(5,2) NOT NULL,
+    effective_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (term_days, effective_date)
+);
+
+CREATE TABLE player_cds (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    player_id UUID NOT NULL REFERENCES players(id),
+    amount DECIMAL(10,2) NOT NULL,
+    term_days INT NOT NULL,
+    rate DECIMAL(5,2) NOT NULL,
+    start_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    maturity_date TIMESTAMP NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'matured', 'withdrawn')),
+    interest_paid DECIMAL(10,2),
+    INDEX (player_id, status)
+);
+
+CREATE TABLE interest_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    player_id UUID NOT NULL REFERENCES players(id),
+    cd_id UUID REFERENCES player_cds(id),
+    amount DECIMAL(10,2) NOT NULL,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('cd_maturity', 'savings_interest')),
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX (player_id, type, timestamp)
+);
+
+-- Marketplace tables
+CREATE TABLE marketplace_listings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    seller_id UUID NOT NULL REFERENCES players(id),
+    item_id UUID NOT NULL REFERENCES items(id),
+    quantity INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'sold', 'cancelled')),
+    INDEX (seller_id, status),
+    INDEX (item_id, status, price)
+);
+
+-- Add changefeed support to tables
+ALTER TABLE stock_prices SET (changefeed.enabled = true);
+ALTER TABLE stock_transactions SET (changefeed.enabled = true);
+ALTER TABLE cd_rates SET (changefeed.enabled = true);
+ALTER TABLE player_cds SET (changefeed.enabled = true);
+ALTER TABLE interest_transactions SET (changefeed.enabled = true);
+ALTER TABLE marketplace_listings SET (changefeed.enabled = true);
+
+-- Create changefeed jobs
+CREATE CHANGEFEED FOR TABLE stock_prices INTO 'kafka://kafka:9092' WITH updated, resolved='5s';
+CREATE CHANGEFEED FOR TABLE stock_transactions INTO 'kafka://kafka:9092' WITH updated, resolved='10s';
+CREATE CHANGEFEED FOR TABLE cd_rates INTO 'kafka://kafka:9092' WITH updated, resolved='10s';
+CREATE CHANGEFEED FOR TABLE player_cds INTO 'kafka://kafka:9092' WITH updated, resolved='10s';
+CREATE CHANGEFEED FOR TABLE interest_transactions INTO 'kafka://kafka:9092' WITH updated, resolved='5s';
+CREATE CHANGEFEED FOR TABLE marketplace_listings INTO 'kafka://kafka:9092' WITH updated, resolved='10s'; 
+
+-- Add changefeed support for combat-related tables
+ALTER TABLE combat_logs SET (changefeed.enabled = true);
+ALTER TABLE hospital_stays SET (changefeed.enabled = true);
+ALTER TABLE combat_stats SET (changefeed.enabled = true);
+
+-- Add changefeed support for faction-related tables
+ALTER TABLE faction_wars SET (changefeed.enabled = true);
+ALTER TABLE faction_war_participation SET (changefeed.enabled = true);
+ALTER TABLE faction_rankings SET (changefeed.enabled = true);
+
+-- Create combat and faction changefeeds
+CREATE CHANGEFEED FOR TABLE combat_logs 
+INTO 'kafka://kafka:9092' 
+WITH updated, resolved='2s';  -- Fast updates for combat
+
+CREATE CHANGEFEED FOR TABLE hospital_stays 
+INTO 'kafka://kafka:9092' 
+WITH updated, resolved='5s';
+
+CREATE CHANGEFEED FOR TABLE combat_stats 
+INTO 'kafka://kafka:9092' 
+WITH updated, resolved='5s';
+
+CREATE CHANGEFEED FOR TABLE faction_wars 
+INTO 'kafka://kafka:9092' 
+WITH updated, resolved='5s';
+
+CREATE CHANGEFEED FOR TABLE faction_war_participation 
+INTO 'kafka://kafka:9092' 
+WITH updated, resolved='5s';
+
+CREATE CHANGEFEED FOR TABLE faction_rankings 
+INTO 'kafka://kafka:9092' 
+WITH updated, resolved='30s';  -- Rankings can update slower 

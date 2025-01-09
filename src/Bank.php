@@ -4,7 +4,7 @@ namespace Game;
 
 /**
  * Class Bank
- * Handles certificates of deposit (CDs) and banking operations
+ * Handles banking operations, CDs, and interest calculations
  * 
  * @package Game
  */
@@ -23,6 +23,114 @@ class Bank {
     public function __construct(Player $player) {
         $this->player = $player;
         $this->db = Database::getInstance()->getConnection();
+    }
+
+    /**
+     * Initialize bank changefeeds
+     * 
+     * @return void
+     */
+    public function initializeChangefeeds(): void {
+        // Create changefeed for CD rates
+        $stmt = $this->db->prepare("
+            CREATE CHANGEFEED FOR TABLE cd_rates 
+            INTO 'kafka://kafka:9092'
+            WITH updated, resolved='10s'
+        ");
+        $stmt->execute();
+
+        // Create changefeed for player CDs
+        $stmt = $this->db->prepare("
+            CREATE CHANGEFEED FOR TABLE player_cds 
+            INTO 'kafka://kafka:9092'
+            WITH updated, resolved='10s'
+        ");
+        $stmt->execute();
+
+        // Create changefeed for interest payments
+        $stmt = $this->db->prepare("
+            CREATE CHANGEFEED FOR TABLE interest_transactions 
+            INTO 'kafka://kafka:9092'
+            WITH updated, resolved='5s'
+        ");
+        $stmt->execute();
+    }
+
+    /**
+     * Update CD interest rates
+     *
+     * @return void
+     */
+    public function updateCDRates(): void {
+        $this->db->beginTransaction();
+
+        try {
+            $baseRate = $this->calculateBaseRate();
+            $terms = [30, 60, 90, 180, 360]; // Days
+
+            foreach ($terms as $term) {
+                $rate = $this->calculateTermRate($baseRate, $term);
+                
+                $stmt = $this->db->prepare("
+                    INSERT INTO cd_rates (term_days, rate, effective_date)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                ");
+                $stmt->execute([$term, $rate]);
+            }
+
+            $this->db->commit();
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
+
+    /**
+     * Process CD maturity and interest payments
+     *
+     * @return void
+     */
+    public function processCDMaturity(): void {
+        $this->db->beginTransaction();
+
+        try {
+            $stmt = $this->db->prepare("
+                SELECT * FROM player_cds 
+                WHERE maturity_date <= CURRENT_TIMESTAMP 
+                AND status = 'active'
+            ");
+            $stmt->execute();
+            
+            foreach ($stmt->fetchAll() as $cd) {
+                $interest = $this->calculateCDInterest($cd);
+                
+                // Record interest payment
+                $stmt = $this->db->prepare("
+                    INSERT INTO interest_transactions 
+                    (player_id, cd_id, amount, type)
+                    VALUES (?, ?, ?, 'cd_maturity')
+                ");
+                $stmt->execute([$cd['player_id'], $cd['id'], $interest]);
+
+                // Update CD status
+                $stmt = $this->db->prepare("
+                    UPDATE player_cds 
+                    SET status = 'matured', 
+                        interest_paid = ?
+                    WHERE id = ?
+                ");
+                $stmt->execute([$interest, $cd['id']]);
+
+                // Pay player
+                $player = new Player($this->getPlayerById($cd['player_id']));
+                $player->addMoney($cd['amount'] + $interest);
+            }
+
+            $this->db->commit();
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
     }
 
     /**

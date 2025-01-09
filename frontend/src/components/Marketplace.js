@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_MARKET_LISTINGS } from '../graphql/queries';
 import { CREATE_MARKET_LISTING, BUY_MARKET_LISTING } from '../graphql/mutations';
+import { KafkaConsumer } from '../utils/kafka';
 import './Marketplace.css';
 
 const Marketplace = ({ player }) => {
@@ -9,6 +10,38 @@ const Marketplace = ({ player }) => {
         type: '',
         maxPrice: ''
     });
+
+    const [listings, setListings] = useState([]);
+    
+    useEffect(() => {
+        // Initial load of listings
+        fetchListings();
+        
+        // Subscribe to changefeed updates
+        const consumer = new KafkaConsumer('marketplace_listings');
+        consumer.subscribe((message) => {
+            const change = JSON.parse(message.value);
+            
+            if (change.after) {
+                // New or updated listing
+                setListings(prev => {
+                    const updated = [...prev];
+                    const index = updated.findIndex(l => l.id === change.after.id);
+                    if (index >= 0) {
+                        updated[index] = change.after;
+                    } else {
+                        updated.push(change.after);
+                    }
+                    return updated;
+                });
+            } else if (change.deleted) {
+                // Listing was removed
+                setListings(prev => prev.filter(l => l.id !== change.deleted.id));
+            }
+        });
+
+        return () => consumer.disconnect();
+    }, []);
 
     const { data: listingsData, loading: listingsLoading } = useQuery(GET_MARKET_LISTINGS, {
         variables: { filter: filters },
@@ -70,8 +103,6 @@ const Marketplace = ({ player }) => {
     };
 
     if (listingsLoading) return <div>Loading marketplace...</div>;
-
-    const listings = listingsData?.marketListings || [];
 
     return (
         <div className="marketplace">

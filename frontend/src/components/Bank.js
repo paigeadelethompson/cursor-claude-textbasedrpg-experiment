@@ -1,12 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_PLAYER_CDS } from '../graphql/queries';
+import { GET_CD_RATES, GET_PLAYER_CDS } from '../graphql/queries';
 import { CREATE_CD, WITHDRAW_CD } from '../graphql/mutations';
+import { KafkaConsumer } from '../utils/kafka';
 import './Bank.css';
 
 const Bank = ({ player }) => {
-    const [amount, setAmount] = useState('');
-    const [termMonths, setTermMonths] = useState(3);
+    const [cdRates, setCDRates] = useState([]);
+    const [playerCDs, setPlayerCDs] = useState([]);
+
+    useEffect(() => {
+        // Initial data load
+        fetchCDRates();
+        fetchPlayerCDs();
+
+        // Subscribe to CD rate updates
+        const rateConsumer = new KafkaConsumer('cd_rates');
+        rateConsumer.subscribe((message) => {
+            const change = JSON.parse(message.value);
+            if (change.after) {
+                setCDRates(prev => {
+                    const updated = [...prev];
+                    const index = updated.findIndex(r => r.term_days === change.after.term_days);
+                    if (index >= 0) {
+                        updated[index] = change.after;
+                    } else {
+                        updated.push(change.after);
+                    }
+                    return updated.sort((a, b) => a.term_days - b.term_days);
+                });
+            }
+        });
+
+        // Subscribe to player CD updates
+        const cdConsumer = new KafkaConsumer('player_cds');
+        cdConsumer.subscribe((message) => {
+            const change = JSON.parse(message.value);
+            if (change.after && change.after.player_id === player.id) {
+                setPlayerCDs(prev => {
+                    const updated = [...prev];
+                    const index = updated.findIndex(cd => cd.id === change.after.id);
+                    if (index >= 0) {
+                        updated[index] = change.after;
+                    } else {
+                        updated.push(change.after);
+                    }
+                    return updated;
+                });
+            }
+        });
+
+        // Subscribe to interest payments
+        const interestConsumer = new KafkaConsumer('interest_transactions');
+        interestConsumer.subscribe((message) => {
+            const change = JSON.parse(message.value);
+            if (change.after && change.after.player_id === player.id) {
+                // Refresh player CDs when interest is paid
+                fetchPlayerCDs();
+            }
+        });
+
+        return () => {
+            rateConsumer.disconnect();
+            cdConsumer.disconnect();
+            interestConsumer.disconnect();
+        };
+    }, [player.id]);
 
     const { data: cdsData, loading: cdsLoading } = useQuery(GET_PLAYER_CDS, {
         variables: { playerId: player.id }
