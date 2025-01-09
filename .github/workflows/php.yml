@@ -15,10 +15,14 @@ jobs:
         run: |
           docker run --rm -v $(pwd):/data phpdoc/phpdoc:3 -d ./Src -t ./Docs
 
-      # - name: git commit
-      #   run: |
-      #     git config user.name "GitHub Actions"
-      #     git config user.email ""
-      #     git add Docs/
-      #     git commit -m "Update phpdoc" || echo "No changes to commit"
-      #     git push
+      - name: git commit
+        run: | 
+          git remote add origin https://github.com/paigeadelethompson/cursor-claude-textbasedrpg-experiment.wiki.git /tmp/Docs
+          git config user.name "GitHub Actions"
+          git config user.email ""
+          cd Docs/
+          cp -rvp . /tmp/Docs
+          cd /tmp/Docs
+          git add .
+          git commit -m "Update phpdoc" || echo "No changes to commit"
+          git push
