@@ -1,0 +1,85 @@
+.faction-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.faction-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.faction-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.faction-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.faction-tabs button {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+    transition: all 0.3s ease;
+}
+
+.faction-tabs button.active {
+    color: #4CAF50;
+    border-bottom: 2px solid #4CAF50;
+}
+
+.faction-create {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.faction-create form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.faction-create input,
+.faction-create textarea {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.faction-create textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.faction-overview {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.faction-stats-detailed {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+} 

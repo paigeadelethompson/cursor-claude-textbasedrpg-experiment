@@ -1,0 +1,31 @@
+.travel-restriction {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.restriction-content {
+    text-align: center;
+    max-width: 400px;
+}
+
+.restriction-content h3 {
+    color: #e74c3c;
+    margin-bottom: 15px;
+}
+
+.restriction-content p {
+    color: #666;
+    margin: 10px 0;
+}
+
+.restriction-note {
+    font-style: italic;
+    color: #999;
+    margin-top: 20px;
+} 

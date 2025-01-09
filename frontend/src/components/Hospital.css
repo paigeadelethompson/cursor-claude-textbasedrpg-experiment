@@ -1,0 +1,173 @@
+.hospital-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.hospital-container.hospitalized {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.hospital-status {
+    grid-column: 1 / -1;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid #e74c3c;
+}
+
+.hospital-status h2 {
+    color: #e74c3c;
+    margin: 0 0 15px 0;
+}
+
+.hospital-status p {
+    margin: 10px 0;
+    color: #666;
+    font-size: 1.1em;
+}
+
+.hospital-status p:first-of-type {
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.self-medicate {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.self-medicate h3 {
+    color: #2c3e50;
+    margin: 0 0 15px 0;
+}
+
+.healing-items {
+    display: grid;
+    gap: 15px;
+}
+
+.healing-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    transition: transform 0.2s;
+}
+
+.healing-item:hover {
+    transform: translateY(-2px);
+}
+
+.healing-item h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+.healing-item p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.healing-item button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.healing-item button:hover:not(:disabled) {
+    background: #219a52;
+}
+
+.healing-item button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.other-patients {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.other-patients h3 {
+    color: #2c3e50;
+    margin: 0 0 15px 0;
+}
+
+.patient-card {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #e9ecef;
+}
+
+.patient-card h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+.patient-card p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.patient-card p:last-child {
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+.hospitalized-players {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hospitalized-players h2 {
+    color: #2c3e50;
+    margin: 0 0 20px 0;
+}
+
+/* Loading state */
+.hospital-container > div:first-child {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .hospital-container {
+        padding: 10px;
+    }
+
+    .hospital-container.hospitalized {
+        grid-template-columns: 1fr;
+    }
+
+    .hospital-status {
+        grid-column: 1;
+    }
+
+    .healing-item {
+        padding: 12px;
+    }
+
+    .patient-card {
+        padding: 12px;
+    }
+} 

@@ -1,0 +1,110 @@
+.faction-members {
+    display: grid;
+    gap: 20px;
+}
+
+.invite-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.search-bar input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.members-list {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.member-card {
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.member-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.role {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.role.leader {
+    background: #ffd700;
+    color: #000;
+}
+
+.role.officer {
+    background: #c0c0c0;
+    color: #000;
+}
+
+.role.member {
+    background: #cd7f32;
+    color: #fff;
+}
+
+.member-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 10px 0;
+    color: #666;
+}
+
+.member-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.member-actions button {
+    flex: 1;
+    padding: 8px;
+    font-size: 12px;
+}
+
+button.promote {
+    background: #4CAF50;
+}
+
+button.kick {
+    background: #f44336;
+}
+
+.player-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    margin-bottom: 10px;
+} 

@@ -1,0 +1,146 @@
+.bank {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+}
+
+.create-cd {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: fit-content;
+}
+
+.create-cd form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.input-group label {
+    font-weight: 500;
+    color: #666;
+}
+
+.input-group input,
+.input-group select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.cd-lists {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.active-cds,
+.matured-cds {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.cd-card {
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: transform 0.2s;
+}
+
+.cd-card:hover {
+    transform: translateY(-2px);
+}
+
+.cd-card.matured {
+    background: #f8f9fa;
+}
+
+.cd-info h3 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+.cd-info p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.maturity-status {
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.maturity-status.pending {
+    color: #f39c12;
+    background: rgba(243, 156, 18, 0.1);
+}
+
+.maturity-status.mature {
+    color: #27ae60;
+    background: rgba(39, 174, 96, 0.1);
+}
+
+.cd-card .estimated-return {
+    font-size: 0.9em;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+
+.withdraw-button {
+    width: 100%;
+    margin-top: 15px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.withdraw-button:hover {
+    background: #219a52;
+    transform: translateY(-1px);
+}
+
+.withdraw-button:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 20px;
+}
+
+button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .bank {
+        grid-template-columns: 1fr;
+    }
+} 

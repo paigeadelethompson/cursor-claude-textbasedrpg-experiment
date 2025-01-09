@@ -1,0 +1,150 @@
+.travel-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.travel-status {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.travel-status h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.5em;
+}
+
+.travel-progress {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #2196F3;
+}
+
+.travel-progress h3 {
+    margin: 0 0 10px 0;
+    color: #2196F3;
+}
+
+.travel-progress p {
+    margin: 0;
+    font-family: monospace;
+    font-size: 1.2em;
+    color: #666;
+}
+
+.map-container {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Leaflet map overrides */
+.leaflet-container {
+    border-radius: 6px;
+}
+
+.leaflet-popup-content {
+    margin: 10px;
+}
+
+.leaflet-popup-content h3 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.2em;
+}
+
+.leaflet-popup-content p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.leaflet-popup-content button {
+    width: 100%;
+    padding: 8px;
+    margin-top: 10px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.leaflet-popup-content button:hover:not(:disabled) {
+    background: #1976D2;
+}
+
+.leaflet-popup-content button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.return-button {
+    padding: 15px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.return-button:hover:not(:disabled) {
+    background: #45a049;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.return-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* City marker hover effect */
+.leaflet-interactive:hover {
+    filter: brightness(1.2);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .travel-container {
+        padding: 10px;
+    }
+
+    .map-container {
+        padding: 5px;
+    }
+
+    .leaflet-container {
+        height: 400px !important;
+    }
+
+    .travel-status h2 {
+        font-size: 1.2em;
+    }
+
+    .travel-progress {
+        padding: 10px;
+    }
+
+    .travel-progress p {
+        font-size: 1em;
+    }
+
+    .return-button {
+        padding: 12px;
+        font-size: 1em;
+    }
+} 

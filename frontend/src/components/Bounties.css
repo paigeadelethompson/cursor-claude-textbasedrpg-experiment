@@ -1,0 +1,148 @@
+.bounties-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+}
+
+.place-bounty {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: fit-content;
+}
+
+.place-bounty h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+}
+
+.place-bounty form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-group input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 2px rgba(231,76,60,0.1);
+}
+
+.error {
+    background: #fee;
+    color: #e74c3c;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.place-bounty button {
+    padding: 12px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.place-bounty button:hover:not(:disabled) {
+    background: #c0392b;
+}
+
+.place-bounty button:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.active-bounties {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.active-bounties h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+}
+
+.bounties-list {
+    display: grid;
+    gap: 15px;
+}
+
+.bounty-card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    transition: transform 0.2s;
+}
+
+.bounty-card:hover {
+    transform: translateY(-2px);
+}
+
+.bounty-info h3 {
+    color: #e74c3c;
+    margin: 0 0 15px 0;
+    font-size: 1.5em;
+}
+
+.bounty-info p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.bounty-info .date {
+    color: #999;
+    font-size: 0.9em;
+    margin-top: 10px;
+}
+
+.no-bounties {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .bounties-container {
+        grid-template-columns: 1fr;
+    }
+
+    .bounty-card {
+        padding: 15px;
+    }
+
+    .place-bounty,
+    .active-bounties {
+        padding: 15px;
+    }
+} 

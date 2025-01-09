@@ -1,0 +1,349 @@
+type Query {
+    player(id: ID!): Player
+    faction(id: ID!): Faction
+    stocks: [Stock!]!
+    marketListings(filter: MarketListingFilter): [MarketListing!]!
+    factionWars(factionId: ID!): FactionWars!
+    factionMembers(factionId: ID!): [FactionMember!]!
+    searchPlayers(term: String!): [Player!]!
+    cities: [City!]!
+    currentCity: City!
+    travelStatus: TravelStatus
+    hospitalizedPlayers: [HospitalizedPlayer!]!
+    hospitalStatus: HospitalStatus
+    accessibleFeatures: AccessibleFeatures!
+    activeBounties: [Bounty!]!
+    bountiesOnPlayer(playerId: ID!): [Bounty!]!
+}
+
+type Mutation {
+    # Player mutations
+    updatePlayer(input: PlayerInput!): Player!
+    
+    # Faction mutations
+    createFaction(input: CreateFactionInput!): Faction!
+    inviteToFaction(input: FactionInviteInput!): Boolean!
+    promoteMember(input: PromoteMemberInput!): Boolean!
+    kickMember(input: KickMemberInput!): Boolean!
+    declareWar(input: DeclareWarInput!): FactionWar!
+    
+    # Market mutations
+    createMarketListing(input: CreateListingInput!): MarketListing!
+    buyMarketListing(id: ID!): Transaction!
+    
+    # Stock market mutations
+    buyStock(input: StockTransactionInput!): StockTransaction!
+    sellStock(input: StockTransactionInput!): StockTransaction!
+    
+    # Bank mutations
+    createCD(input: CreateCDInput!): CD!
+    withdrawCD(id: ID!): Transaction!
+    
+    travelTo(cityId: ID!): TravelResult!
+    returnToMainCity: TravelResult!
+    selfMedicate(itemId: ID!): SelfMedicateResult!
+    register(username: String!, password: String!): AuthResponse!
+    login(username: String!, password: String!): AuthResponse!
+    logout: Boolean!
+    placeBounty(targetId: ID!, amount: Float!): PlaceBountyResult!
+    claimBounty(bountyId: ID!, hospitalStayId: ID!): ClaimBountyResult!
+}
+
+type Player {
+    id: ID!
+    username: String!
+    level: Int!
+    experience: Int!
+    energy: Int!
+    happiness: Int!
+    money: Float!
+    combatStats: CombatStats!
+    inventory: [InventoryItem!]!
+    faction: Faction
+    stocks: [PlayerStock!]!
+    cds: [CD!]!
+}
+
+type CombatStats {
+    strength: Int!
+    defense: Int!
+    speed: Int!
+    dexterity: Int!
+    health: Int!
+}
+
+type Faction {
+    id: ID!
+    name: String!
+    description: String!
+    level: Int!
+    experience: Int!
+    money: Float!
+    memberCount: Int!
+    leader: Player!
+    members: [FactionMember!]!
+    activeWars: [FactionWar!]!
+    warHistory: [FactionWar!]!
+    ranking: FactionRanking!
+}
+
+type FactionMember {
+    player: Player!
+    role: FactionRole!
+    contributionPoints: Int!
+    joinedAt: DateTime!
+}
+
+type FactionWar {
+    id: ID!
+    attacker: Faction!
+    defender: Faction!
+    startTime: DateTime!
+    endTime: DateTime
+    status: WarStatus!
+    winner: Faction
+    pointsAtStake: Int!
+    participation: [WarParticipation!]!
+}
+
+type WarParticipation {
+    player: Player!
+    attacksMade: Int!
+    damageDealt: Int!
+    pointsContributed: Int!
+}
+
+type Stock {
+    id: ID!
+    symbol: String!
+    name: String!
+    currentPrice: Float!
+    priceHistory: [StockPrice!]!
+}
+
+type StockPrice {
+    price: Float!
+    timestamp: DateTime!
+}
+
+type PlayerStock {
+    stock: Stock!
+    quantity: Int!
+    purchasePrice: Float!
+    purchaseDate: DateTime!
+}
+
+type MarketListing {
+    id: ID!
+    seller: Player!
+    item: Item!
+    quantity: Int!
+    price: Float!
+    createdAt: DateTime!
+}
+
+type Item {
+    id: ID!
+    name: String!
+    type: ItemType!
+    msrp: Float!
+    description: String!
+    effects: ItemEffects!
+}
+
+type ItemEffects {
+    health: Int
+    energy: Int
+    happiness: Int
+    strength: Int
+    defense: Int
+    speed: Int
+    dexterity: Int
+}
+
+type CD {
+    id: ID!
+    amount: Float!
+    interestRate: Float!
+    startDate: DateTime!
+    maturityDate: DateTime!
+    isMatured: Boolean!
+}
+
+enum FactionRole {
+    LEADER
+    OFFICER
+    MEMBER
+}
+
+enum WarStatus {
+    ACTIVE
+    COMPLETED
+    CANCELLED
+}
+
+enum ItemType {
+    WEAPON
+    ARMOR
+    DRUG
+    MEDICINE
+    MISC
+}
+
+input PlayerInput {
+    id: ID!
+    energy: Int
+    happiness: Int
+    health: Int
+}
+
+input CreateFactionInput {
+    name: String!
+    description: String!
+    leaderId: ID!
+}
+
+input FactionInviteInput {
+    factionId: ID!
+    playerId: ID!
+}
+
+input PromoteMemberInput {
+    factionId: ID!
+    memberId: ID!
+}
+
+input KickMemberInput {
+    factionId: ID!
+    memberId: ID!
+}
+
+input DeclareWarInput {
+    attackerFactionId: ID!
+    defenderFactionId: ID!
+    pointsAtStake: Int!
+}
+
+input CreateListingInput {
+    itemId: ID!
+    quantity: Int!
+    price: Float!
+    sellerId: ID!
+}
+
+input StockTransactionInput {
+    stockId: ID!
+    quantity: Int!
+    playerId: ID!
+}
+
+input CreateCDInput {
+    amount: Float!
+    termMonths: Int!
+    playerId: ID!
+}
+
+input MarketListingFilter {
+    type: ItemType
+    maxPrice: Float
+}
+
+type City {
+    id: ID!
+    name: String!
+    country: String!
+    latitude: Float!
+    longitude: Float!
+    travelCost: Float!
+    isMainCity: Boolean!
+}
+
+type TravelStatus {
+    inProgress: Boolean!
+    destination: City
+    arrivalTime: DateTime
+    travelTimeRemaining: Int # seconds
+}
+
+type TravelResult {
+    success: Boolean!
+    destination: String!
+    cost: Float!
+    arrivalTime: DateTime!
+    travelTimeHours: Float!
+    distanceKm: Float!
+}
+
+type HospitalizedPlayer {
+    id: ID!
+    playerName: String!
+    attackerName: String
+    admittedAt: DateTime!
+    releaseTime: DateTime!
+    initialHealth: Int!
+    currentHealth: Int!
+    reason: String
+}
+
+type HospitalStatus {
+    isHospitalized: Boolean!
+    releaseTime: DateTime
+    currentHealth: Int
+    timeRemaining: Int # seconds
+    admittedAt: DateTime
+    attacker: Player
+    reason: String
+}
+
+type SelfMedicateResult {
+    success: Boolean!
+    released: Boolean!
+    timeReduced: Int!
+    newReleaseTime: DateTime
+}
+
+type AuthResponse {
+    token: String!
+    expiresAt: DateTime!
+}
+
+type AccessibleFeatures {
+    inventory: Boolean!
+    market: Boolean!
+    bank: Boolean!
+    gym: Boolean!
+    hospital: Boolean!
+    combat: Boolean!
+    faction: Boolean!
+    travel: Boolean!
+}
+
+type Bounty {
+    id: ID!
+    issuer: Player!
+    target: Player!
+    amount: Float!
+    createdAt: DateTime!
+    claimedBy: Player
+    claimedAt: DateTime
+    status: BountyStatus!
+}
+
+type PlaceBountyResult {
+    success: Boolean!
+    bountyId: ID!
+    amount: Float!
+}
+
+type ClaimBountyResult {
+    success: Boolean!
+    amount: Float!
+}
+
+enum BountyStatus {
+    ACTIVE
+    CLAIMED
+    CANCELLED
+}
+
+scalar DateTime 
