@@ -1,6 +1,6 @@
 # Online RPG Game
 
-A browser-based multiplayer RPG game built with PHP, MySQL, CockroachDB, and GraphQL.
+A browser-based multiplayer RPG game built with PHP, CockroachDB, and GraphQL.
 
 ## Features
 
