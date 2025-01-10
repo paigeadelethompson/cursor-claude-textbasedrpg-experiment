@@ -2,8 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import glsl from 'vite-plugin-glsl';
 import { resolve } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
