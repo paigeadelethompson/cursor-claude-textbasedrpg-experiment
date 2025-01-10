@@ -162,41 +162,7 @@ class StockMarket {
         $stmt->execute([$this->player->getId()]);
         return $stmt->fetchAll();
     }
-
-    /**
-     * Update stock prices based on market simulation
-     *
-     * @return void
-     */
-    private function updatePrices(): void {
-        // Simulate market movements
-        $stmt = $this->db->prepare("
-            SELECT * FROM stocks
-        ");
-        $stmt->execute();
-        $stocks = $stmt->fetchAll();
-
-        foreach ($stocks as $stock) {
-            $change = rand(-500, 500) / 100; // -5.00 to +5.00
-            $newPrice = max(0.01, $stock['current_price'] + $change);
-
-            // Update current price
-            $stmt = $this->db->prepare("
-                UPDATE stocks 
-                SET current_price = ?, last_updated = CURRENT_TIMESTAMP
-                WHERE id = ?
-            ");
-            $stmt->execute([$newPrice, $stock['id']]);
-
-            // Record price history
-            $stmt = $this->db->prepare("
-                INSERT INTO stock_price_history 
-                (stock_id, price) VALUES (?, ?)
-            ");
-            $stmt->execute([$stock['id'], $newPrice]);
-        }
-    }
-
+    
     /**
      * Calculate new stock price using random walk algorithm
      *
