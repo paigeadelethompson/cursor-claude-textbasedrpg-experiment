@@ -47,6 +47,7 @@ type Mutation {
     logout: Boolean!
     placeBounty(targetId: ID!, amount: Float!): PlaceBountyResult!
     claimBounty(bountyId: ID!, hospitalStayId: ID!): ClaimBountyResult!
+    sacrifice(stat: String!, energy: Int!): SacrificeResult
 }
 
 type Player {
@@ -344,6 +345,14 @@ enum BountyStatus {
     ACTIVE
     CLAIMED
     CANCELLED
+}
+
+type SacrificeResult {
+    success: Boolean!
+    stat: String!
+    gains: Float!
+    energy_sacrificed: Int!
+    happiness_lost: Int!
 }
 
 scalar DateTime 

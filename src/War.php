@@ -8,7 +8,7 @@ namespace Game;
  * 
  * @package Game
  */
-class FactionWar {
+class War {
     /** @var \PDO Database connection instance */
     private $db;
 

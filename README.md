@@ -5,13 +5,13 @@ A browser-based multiplayer RPG game built with PHP, MySQL, CockroachDB, and Gra
 ## Features
 
 - Player character creation and progression
-- Real-time combat system with stats and equipment
+- Real-time combat system with stats gained through satanic rituals
 - Live marketplace for trading items between players
 - Real-time stock market simulation with live price updates
 - Banking system with CDs and interest rates
-- Faction system with wars and alliances
+- Cult system with wars and alliances
 - Hospital system for healing after combat
-- Energy system for actions and training
+- Energy system for sacrifices and rituals
 - Travel between different locations
 - Inventory and equipment management
 

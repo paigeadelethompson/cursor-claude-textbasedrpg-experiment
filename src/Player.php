@@ -2,172 +2,211 @@
 
 namespace Game;
 
-/**
- * Class Player
- * Core player class handling player data, stats, and actions
- * 
- * @package Game
- */
+use Game\Training\SatanicShrine;
+
 class Player {
-    /** @var \PDO Database connection instance */
+    private $id;
+    private $stats;
+    private $energy;
+    private $happiness;
+    private $satanPoints;
+    private $shrineModifiers;
+    private $lastEnergyUpdate;
+    private $lastHappinessUpdate;
     private $db;
 
-    /** @var array Player data */
-    private $data;
-
-    /** @var int Maximum energy level */
     private const MAX_ENERGY = 100;
-
-    /** @var int Maximum happiness level */
     private const MAX_HAPPINESS = 100;
-
-    /** @var int Minutes for one energy point regeneration */
     private const ENERGY_REGEN_MINUTES = 5;
-
-    /** @var int Minutes for one happiness point regeneration */
     private const HAPPINESS_REGEN_MINUTES = 10;
 
-    /**
-     * Player constructor
-     *
-     * @param array $playerData Player data from database
-     * @throws \Exception If player data is invalid
-     */
-    public function __construct(array $playerData) {
-        if (!isset($playerData['id'])) {
-            throw new \Exception("Invalid player data");
+    public function __construct(string $id, ?\PDO $db = null) {
+        $this->id = $id;
+        $this->db = $db;
+        $this->stats = [
+            'strength' => 10,
+            'defense' => 10,
+            'speed' => 10,
+            'dexterity' => 10
+        ];
+        $this->energy = 100;
+        $this->happiness = 100;
+        $this->satanPoints = 0;
+        $this->shrineModifiers = 1.0;
+        $this->lastEnergyUpdate = time();
+        $this->lastHappinessUpdate = time();
+
+        if ($db) {
+            $this->loadFromDatabase();
         }
-        $this->data = $playerData;
-        $this->db = Database::getInstance()->getConnection();
     }
 
-    /**
-     * Get player's unique identifier
-     *
-     * @return string Player ID
-     */
-    public function getId(): string {
-        return $this->data['id'];
-    }
-
-    /**
-     * Get player's username
-     *
-     * @return string Username
-     */
-    public function getUsername(): string {
-        return $this->data['username'];
-    }
-
-    /**
-     * Get player's current money balance
-     *
-     * @return float Current balance
-     */
-    public function getMoney(): float {
-        return $this->data['money'];
-    }
-
-    /**
-     * Add money to player's balance
-     *
-     * @param float $amount Amount to add
-     * @throws \Exception If amount is negative
-     */
-    public function addMoney(float $amount): void {
-        if ($amount < 0) {
-            throw new \Exception("Cannot add negative amount");
-        }
-
+    private function loadFromDatabase(): void {
         $stmt = $this->db->prepare("
-            UPDATE players 
-            SET money = money + ? 
-            WHERE id = ?
+            SELECT * FROM players 
+            LEFT JOIN combat_stats ON players.id = combat_stats.player_id
+            WHERE players.id = ?
         ");
-        $stmt->execute([$amount, $this->getId()]);
-        $this->data['money'] += $amount;
-    }
+        $stmt->execute([$this->id]);
+        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-    /**
-     * Deduct money from player's balance
-     *
-     * @param float $amount Amount to deduct
-     * @throws \Exception If insufficient funds or negative amount
-     */
-    public function deductMoney(float $amount): void {
-        if ($amount < 0) {
-            throw new \Exception("Cannot deduct negative amount");
+        if ($data) {
+            $this->stats = [
+                'strength' => $data['strength'],
+                'defense' => $data['defense'],
+                'speed' => $data['speed'],
+                'dexterity' => $data['dexterity']
+            ];
+            $this->energy = $data['energy'];
+            $this->happiness = $data['happiness'];
+            $this->satanPoints = $data['satan_points'] ?? 0;
+            $this->shrineModifiers = $data['shrine_modifiers'] ?? 1.0;
+            $this->lastEnergyUpdate = strtotime($data['last_energy_update']);
+            $this->lastHappinessUpdate = strtotime($data['last_happiness_update']);
         }
-
-        if ($this->getMoney() < $amount) {
-            throw new \Exception("Insufficient funds");
-        }
-
-        $stmt = $this->db->prepare("
-            UPDATE players 
-            SET money = money - ? 
-            WHERE id = ?
-        ");
-        $stmt->execute([$amount, $this->getId()]);
-        $this->data['money'] -= $amount;
     }
 
-    /**
-     * Get player's current energy level
-     *
-     * @return int Current energy level
-     */
-    public function getEnergy(): int {
-        $this->updateEnergy();
-        return $this->data['energy'];
-    }
-
-    /**
-     * Get player's current happiness level
-     *
-     * @return int Current happiness level
-     */
-    public function getHappiness(): int {
-        $this->updateHappiness();
-        return $this->data['happiness'];
-    }
-
-    /**
-     * Update player's energy based on regeneration time
-     *
-     * @return void
-     */
     private function updateEnergy(): void {
-        $lastUpdate = strtotime($this->data['last_energy_update']);
         $now = time();
-        $minutesPassed = ($now - $lastUpdate) / 60;
+        $minutesPassed = ($now - $this->lastEnergyUpdate) / 60;
         
         if ($minutesPassed >= self::ENERGY_REGEN_MINUTES) {
             $energyGained = floor($minutesPassed / self::ENERGY_REGEN_MINUTES);
-            $newEnergy = min(self::MAX_ENERGY, $this->data['energy'] + $energyGained);
+            $this->energy = min(self::MAX_ENERGY, $this->energy + $energyGained);
+            $this->lastEnergyUpdate = $now;
 
-            if ($newEnergy != $this->data['energy']) {
+            if ($this->db) {
                 $stmt = $this->db->prepare("
                     UPDATE players 
                     SET energy = ?, last_energy_update = CURRENT_TIMESTAMP
                     WHERE id = ?
                 ");
-                $stmt->execute([$newEnergy, $this->getId()]);
-                $this->data['energy'] = $newEnergy;
-                $this->data['last_energy_update'] = date('Y-m-d H:i:s');
+                $stmt->execute([$this->energy, $this->id]);
             }
         }
     }
 
-    /**
-     * Update player's happiness based on regeneration time
-     *
-     * @return void
-     */
     private function updateHappiness(): void {
-        // Similar to updateEnergy but for happiness
-        // ... existing code ...
+        $now = time();
+        $minutesPassed = ($now - $this->lastHappinessUpdate) / 60;
+        
+        if ($minutesPassed >= self::HAPPINESS_REGEN_MINUTES) {
+            $happinessGained = floor($minutesPassed / self::HAPPINESS_REGEN_MINUTES);
+            $this->happiness = min(self::MAX_HAPPINESS, $this->happiness + $happinessGained);
+            $this->lastHappinessUpdate = $now;
+
+            if ($this->db) {
+                $stmt = $this->db->prepare("
+                    UPDATE players 
+                    SET happiness = ?, last_happiness_update = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ");
+                $stmt->execute([$this->happiness, $this->id]);
+            }
+        }
     }
 
-    // ... continue with other methods ...
+    public function getShrineModifiers(): float {
+        return $this->shrineModifiers;
+    }
+
+    public function getSatanPoints(): int {
+        return $this->satanPoints;
+    }
+
+    public function getHappiness(): int {
+        $this->updateHappiness();
+        return $this->happiness;
+    }
+
+    public function getStatTotal(): int {
+        return array_sum($this->stats);
+    }
+
+    public function subtractEnergy(int $amount): void {
+        if ($amount > $this->energy) {
+            throw new \Exception('Insufficient energy for sacrifice');
+        }
+        $this->energy -= $amount;
+    }
+
+    public function subtractHappiness(int $amount): void {
+        $this->happiness = max(0, $this->happiness - $amount);
+    }
+
+    public function addToStat(string $stat, float $amount): void {
+        if (!array_key_exists($stat, $this->stats)) {
+            throw new \InvalidArgumentException("Invalid stat: $stat");
+        }
+        $this->stats[$stat] += $amount;
+    }
+
+    public function getStat(string $stat): int {
+        if (!array_key_exists($stat, $this->stats)) {
+            throw new \InvalidArgumentException("Invalid stat: $stat");
+        }
+        return $this->stats[$stat];
+    }
+
+    public function getEnergy(): int {
+        $this->updateEnergy();
+        return $this->energy;
+    }
+
+    public function addSatanPoints(int $points): void {
+        $this->satanPoints += $points;
+    }
+
+    public function updateShrineModifiers(float $modifier): void {
+        $this->shrineModifiers = $modifier;
+    }
+
+    public function save(): void {
+        if (!$this->db) {
+            return;
+        }
+
+        $this->db->beginTransaction();
+        try {
+            // Update player stats
+            $stmt = $this->db->prepare("
+                UPDATE combat_stats 
+                SET strength = ?, defense = ?, speed = ?, dexterity = ?
+                WHERE player_id = ?
+            ");
+            $stmt->execute([
+                $this->stats['strength'],
+                $this->stats['defense'],
+                $this->stats['speed'],
+                $this->stats['dexterity'],
+                $this->id
+            ]);
+
+            // Update player state
+            $stmt = $this->db->prepare("
+                UPDATE players 
+                SET energy = ?, 
+                    happiness = ?,
+                    satan_points = ?,
+                    shrine_modifiers = ?,
+                    last_energy_update = FROM_UNIXTIME(?),
+                    last_happiness_update = FROM_UNIXTIME(?)
+                WHERE id = ?
+            ");
+            $stmt->execute([
+                $this->energy,
+                $this->happiness,
+                $this->satanPoints,
+                $this->shrineModifiers,
+                $this->lastEnergyUpdate,
+                $this->lastHappinessUpdate,
+                $this->id
+            ]);
+
+            $this->db->commit();
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
 } 

@@ -9,11 +9,14 @@ namespace Game;
  * @package Game
  */
 class Item {
-    /** @var \PDO Database connection instance */
+    private $id;
+    private $name;
+    private $type;
+    private $msrp;
+    private $description;
+    private $effects;
+    private $modelData;
     private $db;
-
-    /** @var array Item data */
-    private $data;
 
     /** @var array Valid item types */
     private const VALID_TYPES = ['weapon', 'armor', 'consumable', 'medical', 'special'];
@@ -24,52 +27,157 @@ class Item {
     /**
      * Item constructor
      *
-     * @param array $itemData Item data from database
-     * @throws \Exception If item data is invalid
+     * @param string $id Item ID
+     * @param \PDO|null $db Database connection instance
      */
-    public function __construct(array $itemData) {
-        if (!isset($itemData['id'])) {
-            throw new \Exception("Invalid item data");
+    public function __construct(string $id, ?\PDO $db = null) {
+        $this->id = $id;
+        $this->db = $db;
+        
+        if ($db) {
+            $this->loadFromDatabase();
         }
-        $this->data = $itemData;
-        $this->db = Database::getInstance()->getConnection();
     }
 
     /**
-     * Create a new item type
+     * Load item data from the database
+     */
+    private function loadFromDatabase(): void {
+        $stmt = $this->db->prepare("
+            SELECT * FROM items WHERE id = ?
+        ");
+        $stmt->execute([$this->id]);
+        $data = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($data) {
+            $this->name = $data['name'];
+            $this->type = $data['type'];
+            $this->msrp = $data['msrp'];
+            $this->description = $data['description'];
+            $this->effects = json_decode($data['effects'], true);
+            $this->modelData = json_decode($data['model_data'], true);
+        }
+    }
+
+    /**
+     * Get item ID
      *
+     * @return string Item ID
+     */
+    public function getId(): string {
+        return $this->id;
+    }
+
+    /**
+     * Get item name
+     *
+     * @return string Item name
+     */
+    public function getName(): string {
+        return $this->name;
+    }
+
+    /**
+     * Get item type
+     *
+     * @return string Item type
+     */
+    public function getType(): string {
+        return $this->type;
+    }
+
+    /**
+     * Get item MSRP
+     *
+     * @return float Item MSRP
+     */
+    public function getMsrp(): float {
+        return $this->msrp;
+    }
+
+    /**
+     * Get item description
+     *
+     * @return string Item description
+     */
+    public function getDescription(): string {
+        return $this->description;
+    }
+
+    /**
+     * Get item effects
+     *
+     * @return array Item effects
+     */
+    public function getEffects(): array {
+        return $this->effects;
+    }
+
+    /**
+     * Get item model data
+     *
+     * @return array Item model data
+     */
+    public function getModelData(): array {
+        return $this->modelData;
+    }
+
+    /**
+     * Check if item is usable
+     *
+     * @return bool True if item is usable, false otherwise
+     */
+    public function isUsable(): bool {
+        return !($this->type === 'UNUSABLE' || 
+                ($this->effects['usable'] ?? true) === false);
+    }
+
+    /**
+     * Check if item is collectible
+     *
+     * @return bool True if item is collectible, false otherwise
+     */
+    public function isCollectible(): bool {
+        return $this->effects['collectible'] ?? false;
+    }
+
+    /**
+     * Create a new item
+     *
+     * @param \PDO $db Database connection instance
      * @param string $name Item name
      * @param string $type Item type
-     * @param float $msrp Manufacturer's suggested retail price
+     * @param float $msrp Item MSRP
+     * @param string $description Item description
      * @param array $effects Item effects
-     * @return array Creation result
-     * @throws \Exception If validation fails
+     * @param array $modelData Item model data
+     * @return Item Created item instance
      */
-    public static function create(string $name, string $type, float $msrp, array $effects = []): array {
-        if (!in_array($type, self::VALID_TYPES)) {
-            throw new \Exception("Invalid item type");
-        }
-
-        self::validateEffects($effects);
-
-        $db = Database::getInstance()->getConnection();
+    public static function create(
+        \PDO $db,
+        string $name,
+        string $type,
+        float $msrp,
+        string $description,
+        array $effects,
+        array $modelData
+    ): self {
         $stmt = $db->prepare("
-            INSERT INTO items (name, type, msrp, effects)
-            VALUES (?, ?, ?, ?)
-            RETURNING id
+            INSERT INTO items (
+                name, type, msrp, description, effects, model_data
+            ) VALUES (?, ?, ?, ?, ?, ?)
         ");
 
         $stmt->execute([
             $name,
             $type,
             $msrp,
-            json_encode($effects)
+            $description,
+            json_encode($effects),
+            json_encode($modelData)
         ]);
 
-        return [
-            'success' => true,
-            'item_id' => $stmt->fetchColumn()
-        ];
+        return new self($db->lastInsertId(), $db);
     }
 
     /**
@@ -80,7 +188,7 @@ class Item {
      * @throws \Exception If item cannot be used
      */
     public function use(Player $player): array {
-        if ($this->data['type'] !== 'consumable' && $this->data['type'] !== 'medical') {
+        if ($this->type !== 'consumable' && $this->type !== 'medical') {
             throw new \Exception("This item cannot be used");
         }
 
@@ -99,11 +207,11 @@ class Item {
      * @throws \Exception If item is not a weapon
      */
     public function getBaseDamage(): int {
-        if ($this->data['type'] !== 'weapon') {
+        if ($this->type !== 'weapon') {
             throw new \Exception("Not a weapon");
         }
 
-        return $this->data['effects']['damage'] ?? 0;
+        return $this->effects['damage'] ?? 0;
     }
 
     /**
@@ -115,7 +223,7 @@ class Item {
     private function applyEffects(Player $player): array {
         $appliedEffects = [];
 
-        foreach ($this->data['effects'] as $stat => $value) {
+        foreach ($this->effects as $stat => $value) {
             switch ($stat) {
                 case 'health':
                     $player->heal($value);

@@ -47,10 +47,47 @@ CREATE TABLE inventory (
 CREATE TABLE items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL,
-    type VARCHAR(50) NOT NULL, -- weapon, armor, drug, medicine, etc
+    type VARCHAR(50) NOT NULL, -- weapon, armor, drug, medicine, unusable, etc
     msrp DECIMAL(20,2) NOT NULL,
     description TEXT,
-    effects JSONB -- Store item effects as JSON
+    effects JSONB,
+    model_data JSONB -- Stores 3D model vertices, textures, etc.
+);
+
+-- Insert morphine shot item
+INSERT INTO items (name, type, msrp, description, effects, model_data) VALUES (
+    'Morphine Shot',
+    'MEDICINE',
+    250.00,
+    'A potent injectable morphine solution. Reduces hospital stay time by 25% but may cause addiction.',
+    '{
+        "health": 25,
+        "happiness": -10,
+        "hospital_time_reduction": 0.25,
+        "addiction_chance": 0.15
+    }',
+    '{
+        "model": "morphine_shot",
+        "scale": [0.15, 0.15, 0.15],
+        "rotation": [0, 0, 0]
+    }'
+);
+
+-- Insert penis pump item
+INSERT INTO items (name, type, msrp, description, effects, model_data) VALUES (
+    'Penis Pump',
+    'UNUSABLE',
+    299.99,
+    'A mysterious device of unknown purpose. Currently non-functional.',
+    '{
+        "usable": false,
+        "collectible": true
+    }',
+    '{
+        "model": "penis_pump",
+        "scale": [0.2, 0.2, 0.2],
+        "rotation": [0, 0, 0]
+    }'
 );
 
 -- Market listings table
@@ -73,11 +110,11 @@ CREATE TABLE combat_logs (
     energy_cost INT DEFAULT 25
 );
 
--- Gym training history
-CREATE TABLE gym_training_logs (
+-- Satan worship history
+CREATE TABLE satan_worship_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     player_id UUID REFERENCES players(id),
-    training_type VARCHAR(20) NOT NULL, -- 'strength', 'defense', 'speed', 'dexterity'
+    sacrifice_type VARCHAR(20) NOT NULL, -- 'strength', 'defense', 'speed', 'dexterity'
     energy_spent INT NOT NULL,
     stat_gain INT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -128,12 +165,12 @@ CREATE TABLE certificates_of_deposit (
     is_matured BOOLEAN DEFAULT FALSE
 );
 
--- Factions table
-CREATE TABLE factions (
+-- Cults table
+CREATE TABLE cults (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) UNIQUE NOT NULL,
     description TEXT,
-    leader_id UUID REFERENCES players(id),
+    cult_leader_id UUID REFERENCES players(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     level INT DEFAULT 1,
     experience INT DEFAULT 0,
@@ -141,44 +178,45 @@ CREATE TABLE factions (
     member_count INT DEFAULT 1
 );
 
--- Faction members table
-CREATE TABLE faction_members (
-    faction_id UUID REFERENCES factions(id),
+-- Cult members table
+CREATE TABLE cult_members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cult_id UUID REFERENCES cults(id),
     player_id UUID REFERENCES players(id),
     role VARCHAR(20) NOT NULL, -- 'leader', 'officer', 'member'
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     contribution_points INT DEFAULT 0,
-    PRIMARY KEY (faction_id, player_id)
+    PRIMARY KEY (cult_id, player_id)
 );
 
--- Faction wars table
-CREATE TABLE faction_wars (
+-- Cult wars table
+CREATE TABLE cult_wars (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    attacker_faction_id UUID REFERENCES factions(id),
-    defender_faction_id UUID REFERENCES factions(id),
+    attacking_cult_id UUID REFERENCES cults(id),
+    defending_cult_id UUID REFERENCES cults(id),
     start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP,
     status VARCHAR(20) DEFAULT 'active', -- 'active', 'completed', 'cancelled'
-    winner_faction_id UUID REFERENCES factions(id),
+    winner_cult_id UUID REFERENCES cults(id),
     points_at_stake INT NOT NULL,
-    UNIQUE(attacker_faction_id, defender_faction_id, status) 
+    UNIQUE(attacking_cult_id, defending_cult_id, status) 
     WHERE status = 'active'
 );
 
--- Faction war participation table
-CREATE TABLE faction_war_participation (
-    war_id UUID REFERENCES faction_wars(id),
+-- Cult war participation table
+CREATE TABLE cult_war_participation (
+    war_id UUID REFERENCES cult_wars(id),
     player_id UUID REFERENCES players(id),
-    faction_id UUID REFERENCES factions(id),
+    cult_id UUID REFERENCES cults(id),
     attacks_made INT DEFAULT 0,
     damage_dealt INT DEFAULT 0,
     points_contributed INT DEFAULT 0,
     PRIMARY KEY (war_id, player_id)
 );
 
--- Faction rankings table
-CREATE TABLE faction_rankings (
-    faction_id UUID PRIMARY KEY REFERENCES factions(id),
+-- Cult rankings table
+CREATE TABLE cult_rankings (
+    cult_id UUID PRIMARY KEY REFERENCES cults(id),
     rank_points INT DEFAULT 0,
     wars_won INT DEFAULT 0,
     wars_lost INT DEFAULT 0,
@@ -363,9 +401,9 @@ ALTER TABLE hospital_stays SET (changefeed.enabled = true);
 ALTER TABLE combat_stats SET (changefeed.enabled = true);
 
 -- Add changefeed support for faction-related tables
-ALTER TABLE faction_wars SET (changefeed.enabled = true);
-ALTER TABLE faction_war_participation SET (changefeed.enabled = true);
-ALTER TABLE faction_rankings SET (changefeed.enabled = true);
+ALTER TABLE cult_wars SET (changefeed.enabled = true);
+ALTER TABLE cult_war_participation SET (changefeed.enabled = true);
+ALTER TABLE cult_rankings SET (changefeed.enabled = true);
 
 -- Create combat and faction changefeeds
 CREATE CHANGEFEED FOR TABLE combat_logs 
@@ -380,14 +418,14 @@ CREATE CHANGEFEED FOR TABLE combat_stats
 INTO 'kafka://kafka:9092' 
 WITH updated, resolved='5s';
 
-CREATE CHANGEFEED FOR TABLE faction_wars 
+CREATE CHANGEFEED FOR TABLE cult_wars 
 INTO 'kafka://kafka:9092' 
 WITH updated, resolved='5s';
 
-CREATE CHANGEFEED FOR TABLE faction_war_participation 
+CREATE CHANGEFEED FOR TABLE cult_war_participation 
 INTO 'kafka://kafka:9092' 
 WITH updated, resolved='5s';
 
-CREATE CHANGEFEED FOR TABLE faction_rankings 
+CREATE CHANGEFEED FOR TABLE cult_rankings 
 INTO 'kafka://kafka:9092' 
 WITH updated, resolved='30s';  -- Rankings can update slower 
