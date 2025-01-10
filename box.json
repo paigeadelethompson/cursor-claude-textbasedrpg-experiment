@@ -1,0 +1,24 @@
+{
+    "main": "public/index.php",
+    "output": "build/rpg-game.phar",
+    "directories": [
+        "src",
+        "public",
+        "vendor"
+    ],
+    "files": [
+        "composer.json",
+        ".env"
+    ],
+    "exclude-composer-files": false,
+    "compression": "GZ",
+    "compactors": [
+        "KevinGH\\Box\\Compactor\\Json",
+        "KevinGH\\Box\\Compactor\\Php"
+    ],
+    "dump-autoload": true,
+    "git-version": "package_version",
+    "datetime": "release_date",
+    "force-autodiscovery": true,
+    "check-requirements": true
+} 
